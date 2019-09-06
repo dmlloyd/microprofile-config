@@ -48,8 +48,8 @@ import org.eclipse.microprofile.config.spi.Converter;
  * The config objects produced via the injection model <pre>@Inject Config</pre> are guaranteed to be serializable, while
  * the programmatically created ones are not required to be serializable.
  * <p>
- * If one or more converters are registered for a class of a requested value then one of the registered converters 
- * which has the highest priority is used to convert the string value retrieved from config sources. 
+ * If one or more converters are registered for a class of a requested value then one of the registered converters
+ * which has the highest priority is used to convert the string value retrieved from config sources.
  * The highest priority means the highest priority number.
  * For more information about converters, see {@link org.eclipse.microprofile.config.spi.Converter}
  *
@@ -89,6 +89,15 @@ import org.eclipse.microprofile.config.spi.Converter;
 public interface Config {
 
     /**
+     * Get a configuration accessor for the given property name.  The accessor provides a means to configure the
+     * access behavior.  The implementation may or may not cache accessor instances.
+     *
+     * @param propertyName the property name to access (must not be {@code null})
+     * @return the immutable configuration accessor (not {@code null})
+     */
+    ConfigAccessor<?> getAccessor(String propertyName);
+
+    /**
      * Return the resolved property value with the specified type for the
      * specified property name from the underlying {@link ConfigSource ConfigSources}.
      * <p>
@@ -105,7 +114,9 @@ public interface Config {
      * @throws java.util.NoSuchElementException if the property isn't present in the configuration, or is present
      *  but has an empty value.
      */
-    <T> T getValue(String propertyName, Class<T> propertyType);
+    default <T> T getValue(String propertyName, Class<T> propertyType) {
+        return getAccessor(propertyName).convertedForType(propertyType).getValue();
+    }
 
     /**
      * Return the resolved property value with the specified type for the
@@ -124,7 +135,9 @@ public interface Config {
      *
      * @throws java.lang.IllegalArgumentException if the property cannot be converted to the specified type.
      */
-    <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType);
+    default <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
+        return getAccessor(propertyName).convertedForType(propertyType).optional().getValue();
+    }
 
     /**
      * Get the converter that would be used for converting instances of the given class.  The resultant converter
